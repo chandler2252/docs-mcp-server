@@ -120,141 +120,199 @@ export function areCredentialsAvailable(provider: EmbeddingProvider): boolean {
  * @throws {ModelConfigurationError} If there's an issue with the model configuration.
  */
 export function createEmbeddingModel(providerAndModel: string): Embeddings {
-  // Parse provider and model name
-  const [providerOrModel, ...modelNameParts] = providerAndModel.split(":");
-  const modelName = modelNameParts.join(":");
-  const provider = modelName ? (providerOrModel as EmbeddingProvider) : "openai";
-  const model = modelName || providerOrModel;
+    // Centralized parse of provider/model/dimensions
+    const embeddingConfig = EmbeddingConfig.parseEmbeddingConfig(providerAndModel);
+    const { provider, model, dimensions } = embeddingConfig;
 
-  // Default configuration for each provider
-  const baseConfig = { stripNewLines: true };
+    // Default configuration for each provider
+    const baseConfig = { stripNewLines: true };
 
-  switch (provider) {
-    case "openai": {
-      if (!process.env.OPENAI_API_KEY) {
-        throw new MissingCredentialsError("openai", ["OPENAI_API_KEY"]);
-      }
-      const timeoutMs = 30_000;
-      const config: Partial<OpenAIEmbeddingsParams> & { configuration?: ClientOptions } =
-        {
-          ...baseConfig,
-          modelName: model,
-          batchSize: 512, // OpenAI supports large batches
-          timeout: timeoutMs,
-        };
-      // Add custom base URL if specified
-      const baseURL = process.env.OPENAI_API_BASE;
-      if (baseURL) {
-        config.configuration = { baseURL, timeout: timeoutMs };
-      } else {
-        config.configuration = { timeout: timeoutMs };
-      }
-      return new OpenAIEmbeddings(config);
-    }
-
-    case "vertex": {
-      if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-        throw new MissingCredentialsError("vertex", ["GOOGLE_APPLICATION_CREDENTIALS"]);
-      }
-      return new VertexAIEmbeddings({
-        ...baseConfig,
-        model: model, // e.g., "text-embedding-004"
-      });
-    }
-
-    case "gemini": {
-      if (!process.env.GOOGLE_API_KEY) {
-        throw new MissingCredentialsError("gemini", ["GOOGLE_API_KEY"]);
-      }
-      // Create base embeddings and wrap with FixedDimensionEmbeddings since Gemini
-      // supports MRL (Matryoshka Representation Learning) for safe truncation
-      const baseEmbeddings = new GoogleGenerativeAIEmbeddings({
-        ...baseConfig,
-        apiKey: process.env.GOOGLE_API_KEY,
-        model: model, // e.g., "gemini-embedding-exp-03-07"
-      });
-      return new FixedDimensionEmbeddings(
-        baseEmbeddings,
-        VECTOR_DIMENSION,
-        providerAndModel,
-        true,
-      );
-    }
-
-    case "aws": {
-      // For AWS, model should be the full Bedrock model ID
-      const region = process.env.BEDROCK_AWS_REGION || process.env.AWS_REGION;
-      const missingCredentials: string[] = [];
-
-      if (!region) {
-        missingCredentials.push("BEDROCK_AWS_REGION or AWS_REGION");
-      }
-
-      // Allow using AWS_PROFILE for credentials if set
-      if (
-        !process.env.AWS_PROFILE &&
-        !process.env.AWS_ACCESS_KEY_ID &&
-        !process.env.AWS_SECRET_ACCESS_KEY
-      ) {
-        missingCredentials.push(
-          "AWS_PROFILE or (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY)",
-        );
-      }
-
-      if (missingCredentials.length > 0) {
-        throw new MissingCredentialsError("aws", missingCredentials);
-      }
-
-      // Only pass explicit credentials if present, otherwise let SDK resolve via profile/other means
-      const credentials =
-        process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
-          ? {
-              accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-              sessionToken: process.env.AWS_SESSION_TOKEN,
+    switch (provider) {
+        case "openai": {
+            if (!process.env.OPENAI_API_KEY) {
+                throw new MissingCredentialsError("openai", ["OPENAI_API_KEY"]);
             }
-          : undefined;
+            const timeoutMs = 30_000;
+            const config: Partial<OpenAIEmbeddingsParams> & { configuration?: ClientOptions } = {
+                ...baseConfig,
+                modelName: model,
+                batchSize: 512, // OpenAI supports large batches
+                timeout: timeoutMs,
+            };
+            // Add custom base URL if specified
+            const baseURL = process.env.OPENAI_API_BASE;
+            if (baseURL) {
+                config.configuration = { baseURL, timeout: timeoutMs };
+            } else {
+                config.configuration = { timeout: timeoutMs };
+            }
+            return new OpenAIEmbeddings(config);
+        }
 
-      return new BedrockEmbeddings({
-        ...baseConfig,
-        model: model, // e.g., "amazon.titan-embed-text-v1"
-        region,
-        ...(credentials ? { credentials } : {}),
-      });
+        case "vertex": {
+            if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+                throw new MissingCredentialsError("vertex", ["GOOGLE_APPLICATION_CREDENTIALS"]);
+            }
+            return new VertexAIEmbeddings({
+                ...baseConfig,
+                model, // e.g., "text-embedding-004"
+            });
+        }
+
+        case "gemini": {
+            if (!process.env.GOOGLE_API_KEY) {
+                throw new MissingCredentialsError("gemini", ["GOOGLE_API_KEY"]);
+            }
+            // Create base embeddings and wrap with FixedDimensionEmbeddings since Gemini
+            // supports MRL (Matryoshka Representation Learning) for safe truncation
+            const baseEmbeddings = new GoogleGenerativeAIEmbeddings({
+                ...baseConfig,
+                apiKey: process.env.GOOGLE_API_KEY,
+                model, // e.g., "gemini-embedding-exp-03-07"
+            });
+            return new FixedDimensionEmbeddings(
+                baseEmbeddings,
+                VECTOR_DIMENSION,
+                providerAndModel,
+                true,
+            );
+        }
+
+        case "aws": {
+            // For AWS, model should be the full Bedrock model ID
+            const region = process.env.BEDROCK_AWS_REGION || process.env.AWS_REGION;
+            const missingCredentials: string[] = [];
+
+            if (!region) {
+                missingCredentials.push("BEDROCK_AWS_REGION or AWS_REGION");
+            }
+
+            // Allow using AWS_PROFILE for credentials if set
+            if (
+                !process.env.AWS_PROFILE &&
+                !process.env.AWS_ACCESS_KEY_ID &&
+                !process.env.AWS_SECRET_ACCESS_KEY
+            ) {
+                missingCredentials.push(
+                    "AWS_PROFILE or (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY)",
+                );
+            }
+
+            if (missingCredentials.length > 0) {
+                throw new MissingCredentialsError("aws", missingCredentials);
+            }
+
+            // Only pass explicit credentials if present, otherwise let SDK resolve via profile/other means
+            const credentials =
+                process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
+                    ? {
+                        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+                        sessionToken: process.env.AWS_SESSION_TOKEN,
+                    }
+                    : undefined;
+
+            return new BedrockEmbeddings({
+                ...baseConfig,
+                model, // e.g., "amazon.titan-embed-text-v1"
+                region,
+                ...(credentials ? { credentials } : {}),
+            });
+        }
+
+        case "microsoft": {
+            // For Azure, model name corresponds to the deployment name
+            const missingCredentials: string[] = [];
+
+            if (!process.env.AZURE_OPENAI_API_KEY) {
+                missingCredentials.push("AZURE_OPENAI_API_KEY");
+            }
+            if (!process.env.AZURE_OPENAI_API_INSTANCE_NAME) {
+                missingCredentials.push("AZURE_OPENAI_API_INSTANCE_NAME");
+            }
+            if (!process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME) {
+                missingCredentials.push("AZURE_OPENAI_API_DEPLOYMENT_NAME");
+            }
+            if (!process.env.AZURE_OPENAI_API_VERSION) {
+                missingCredentials.push("AZURE_OPENAI_API_VERSION");
+            }
+
+            if (missingCredentials.length > 0) {
+                throw new MissingCredentialsError("microsoft", missingCredentials);
+            }
+
+            return new AzureOpenAIEmbeddings({
+                ...baseConfig,
+                azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
+                azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_API_INSTANCE_NAME,
+                azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
+                azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION,
+                deploymentName: model,
+            });
+        }
+
+        case "sagemaker": {
+            const region = process.env.AWS_REGION;
+            const missingCredentials: string[] = [];
+
+            if (!region) {
+                missingCredentials.push("AWS_REGION");
+            }
+
+            if (
+                !process.env.AWS_PROFILE &&
+                !process.env.AWS_ACCESS_KEY_ID &&
+                !process.env.AWS_SECRET_ACCESS_KEY
+            ) {
+                missingCredentials.push(
+                    "AWS_PROFILE or (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY)",
+                );
+            }
+
+            if (missingCredentials.length > 0) {
+                throw new MissingCredentialsError("sagemaker", missingCredentials);
+            }
+
+            // At the moment Sagemaker embeddings are treated similarly to Bedrock in this codebase.
+            // If/when a dedicated SageMaker embeddings implementation is added, wire it here.
+            return new BedrockEmbeddings({
+                ...baseConfig,
+                model,
+                region,
+            });
+        }
+
+        case "runpod": {
+            const missing: string[] = [];
+            if (!process.env.RUNPOD_API_KEY) missing.push("RUNPOD_API_KEY");
+            if (!process.env.RUNPOD_ENDPOINT_ID) missing.push("RUNPOD_ENDPOINT_ID");
+            if (missing.length) {
+                throw new MissingCredentialsError("runpod", missing);
+            }
+
+            const baseEmbeddings = new RunpodQueueEmbeddings({
+                endpointId: process.env.RUNPOD_ENDPOINT_ID!,
+                apiKey: process.env.RUNPOD_API_KEY!,
+                model,
+                baseUrl: process.env.RUNPOD_API_URL || "https://api.runpod.ai/v2",
+                dimensions: process.env.RUNPOD_EMBED_DIM
+                    ? Number(process.env.RUNPOD_EMBED_DIM)
+                    : dimensions ?? undefined,
+                timeoutMs: process.env.RUNPOD_TIMEOUT_MS
+                    ? Number(process.env.RUNPOD_TIMEOUT_MS)
+                    : 300000,
+            });
+
+            // Wrap to enforce a fixed vector size (matching schema)
+            return new FixedDimensionEmbeddings(
+                baseEmbeddings,
+                dimensions ?? VECTOR_DIMENSION,
+                embeddingConfig.modelSpec,
+                true,
+            );
+        }
+
+        default:
+            throw new UnsupportedProviderError(provider);
     }
-
-    case "microsoft": {
-      // For Azure, model name corresponds to the deployment name
-      const missingCredentials: string[] = [];
-
-      if (!process.env.AZURE_OPENAI_API_KEY) {
-        missingCredentials.push("AZURE_OPENAI_API_KEY");
-      }
-      if (!process.env.AZURE_OPENAI_API_INSTANCE_NAME) {
-        missingCredentials.push("AZURE_OPENAI_API_INSTANCE_NAME");
-      }
-      if (!process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME) {
-        missingCredentials.push("AZURE_OPENAI_API_DEPLOYMENT_NAME");
-      }
-      if (!process.env.AZURE_OPENAI_API_VERSION) {
-        missingCredentials.push("AZURE_OPENAI_API_VERSION");
-      }
-
-      if (missingCredentials.length > 0) {
-        throw new MissingCredentialsError("microsoft", missingCredentials);
-      }
-
-      return new AzureOpenAIEmbeddings({
-        ...baseConfig,
-        azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-        azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_API_INSTANCE_NAME,
-        azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
-        azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION,
-        deploymentName: model,
-      });
-    }
-
-    default:
-      throw new UnsupportedProviderError(provider);
-  }
 }

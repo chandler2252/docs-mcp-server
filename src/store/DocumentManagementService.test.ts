@@ -124,7 +124,7 @@ describe("DocumentManagementService", () => {
       const mockConfig = {
         provider: "openai" as const,
         model: "text-embedding-3-small",
-        dimensions: 1536,
+          dimensions: 2560,
         modelSpec: "openai:text-embedding-3-small",
       };
       (mockStore as any).getActiveEmbeddingConfig = vi.fn().mockReturnValue(mockConfig);

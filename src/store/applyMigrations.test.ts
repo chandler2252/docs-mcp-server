@@ -111,7 +111,7 @@ describe("Database Migrations", () => {
     // Check that vector table has the expected schema with foreign keys
     expect(vecTableInfo?.sql).toContain("library_id INTEGER NOT NULL");
     expect(vecTableInfo?.sql).toContain("version_id INTEGER NOT NULL");
-    expect(vecTableInfo?.sql).toContain("embedding FLOAT[1536]");
+      expect(vecTableInfo?.sql).toContain("embedding FLOAT[2560]");
   });
 
   it("should handle vector search with empty results gracefully", () => {
@@ -138,7 +138,7 @@ describe("Database Migrations", () => {
     const _versionId = versionResult!.id;
 
     // Search for vectors in empty library with k constraint
-    const searchVector = new Array(1536).fill(0.5);
+      const searchVector = new Array(2560).fill(0.5);
     const vectorSearchQuery = `
       SELECT 
         dv.rowid,
@@ -246,13 +246,13 @@ describe("Database Migrations", () => {
     ).lastInsertRowid as number;
 
     // Create test vectors (similar vectors for AI-related docs, different for cooking)
-    const aiVector1 = new Array(1536)
+      const aiVector1 = new Array(2560)
       .fill(0)
       .map((_, i) => (i < 100 ? Math.random() * 0.1 + 0.8 : Math.random() * 0.2));
-    const aiVector2 = new Array(1536)
+      const aiVector2 = new Array(2560)
       .fill(0)
       .map((_, i) => (i < 100 ? Math.random() * 0.1 + 0.75 : Math.random() * 0.2));
-    const cookingVector = new Array(1536)
+      const cookingVector = new Array(2560)
       .fill(0)
       .map((_, i) =>
         i >= 100 && i < 200 ? Math.random() * 0.1 + 0.9 : Math.random() * 0.2,
@@ -284,7 +284,7 @@ describe("Database Migrations", () => {
     );
 
     // Search with a vector similar to AI vectors
-    const searchVector = new Array(1536)
+      const searchVector = new Array(2560)
       .fill(0)
       .map((_, i) => (i < 100 ? Math.random() * 0.1 + 0.77 : Math.random() * 0.2));
 

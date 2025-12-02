@@ -16,7 +16,7 @@ vi.mock("./embeddings/EmbeddingFactory", async (importOriginal) => {
       embedQuery: vi.fn(async (text: string) => {
         // Generate deterministic embeddings based on text content for consistent testing
         const words = text.toLowerCase().split(/\s+/);
-        const embedding = new Array(1536).fill(0);
+          const embedding = new Array(2560).fill(0);
 
         // Create meaningful semantic relationships for testing
         words.forEach((word, wordIndex) => {
@@ -27,7 +27,7 @@ vi.mock("./embeddings/EmbeddingFactory", async (importOriginal) => {
           const baseIndex = (wordHash % 100) * 15; // Distribute across embedding dimensions
 
           for (let i = 0; i < 15; i++) {
-            const index = (baseIndex + i) % 1536;
+              const index = (baseIndex + i) % 2560;
             embedding[index] += 1.0 / (wordIndex + 1); // Earlier words get higher weight
           }
         });
@@ -40,7 +40,7 @@ vi.mock("./embeddings/EmbeddingFactory", async (importOriginal) => {
         // Generate embeddings for each text using the same logic as embedQuery
         return texts.map((text) => {
           const words = text.toLowerCase().split(/\s+/);
-          const embedding = new Array(1536).fill(0);
+          const embedding = new Array(2560).fill(0);
 
           words.forEach((word, wordIndex) => {
             const wordHash = Array.from(word).reduce(
@@ -50,7 +50,7 @@ vi.mock("./embeddings/EmbeddingFactory", async (importOriginal) => {
             const baseIndex = (wordHash % 100) * 15;
 
             for (let i = 0; i < 15; i++) {
-              const index = (baseIndex + i) % 1536;
+              const index = (baseIndex + i) % 2560;
               embedding[index] += 1.0 / (wordIndex + 1);
             }
           });
@@ -630,7 +630,7 @@ describe("DocumentStore - With Embeddings", () => {
         }
 
         // Subsequent calls (after split): succeed with dummy embeddings
-        return texts.map(() => new Array(1536).fill(0.1));
+        return texts.map(() => new Array(2560).fill(0.1));
       });
 
       // Create a scrape result with multiple chunks to trigger batching
@@ -677,7 +677,7 @@ describe("DocumentStore - With Embeddings", () => {
         }
 
         // Second call (after truncation): succeed
-        return texts.map(() => new Array(1536).fill(0.1));
+        return texts.map(() => new Array(2560).fill(0.1));
       });
 
       // Create a document with very large content
@@ -722,7 +722,7 @@ describe("DocumentStore - With Embeddings", () => {
           if (callCount === 1) {
             throw new Error(errorMsg);
           }
-          return texts.map(() => new Array(1536).fill(0.1));
+          return texts.map(() => new Array(2560).fill(0.1));
         });
 
         const testLib = `errortest-${sizeErrorMessages.indexOf(errorMsg)}`;
@@ -790,7 +790,7 @@ describe("DocumentStore - With Embeddings", () => {
           throw new Error("maximum context length exceeded");
         }
 
-        return texts.map(() => new Array(1536).fill(0.1));
+        return texts.map(() => new Array(2560).fill(0.1));
       });
 
       // Create multiple chunks to trigger multiple splits

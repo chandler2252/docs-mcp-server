@@ -21,7 +21,7 @@ DROP TABLE documents_vec;
 CREATE VIRTUAL TABLE documents_vec USING vec0(
   library_id INTEGER NOT NULL,
   version_id INTEGER NOT NULL,
-  embedding FLOAT[1536]
+  embedding FLOAT[2560]
 );
 
 -- 5. Restore vector data using foreign key IDs

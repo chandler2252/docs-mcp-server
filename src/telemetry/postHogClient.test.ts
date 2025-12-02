@@ -41,7 +41,7 @@ describe("PostHogClient property conversion", () => {
       cliCommand: "scrape",
       aiEmbeddingProvider: "openai",
       aiEmbeddingModel: "text-embedding-3-small",
-      aiEmbeddingDimensions: 1536,
+        aiEmbeddingDimensions: 2560,
     };
 
     client.capture("test-user", "test_event", properties);
@@ -53,7 +53,7 @@ describe("PostHogClient property conversion", () => {
         // PostHog standard properties
         $app_version: "1.0.0",
         // Converted custom properties (note: appVersion is removed as duplicate)
-        ai_embedding_dimensions: 1536,
+          ai_embedding_dimensions: 2560,
         ai_embedding_model: "text-embedding-3-small",
         ai_embedding_provider: "openai",
         app_auth_enabled: true,

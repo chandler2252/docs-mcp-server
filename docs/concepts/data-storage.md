@@ -220,7 +220,8 @@ Handles document lifecycle operations with normalized schema access.
 
 Embeddings stored as BLOB in documents table:
 
-- 1536-dimensional vectors (OpenAI embedding size)
+- 2560-dimensional vectors (default in this fork, matching Qwen3-Embedding-4B)
+- 1536-dimensional vectors for OpenAI models like text-embedding-3-small
 - Provider-agnostic binary serialization
 - NULL handling for documents without embeddings
 - Direct storage eliminates need for separate vector table

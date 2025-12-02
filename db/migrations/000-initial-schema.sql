@@ -22,7 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_documents_version_lower ON documents(lower(librar
 CREATE VIRTUAL TABLE IF NOT EXISTS documents_vec USING vec0(
   library TEXT NOT NULL,
   version TEXT NOT NULL,
-  embedding FLOAT[1536]
+  embedding FLOAT[2560]
 );
 
 -- Create FTS5 virtual table
