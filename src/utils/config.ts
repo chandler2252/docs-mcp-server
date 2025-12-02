@@ -2,6 +2,13 @@
  * Default configuration values for the scraping pipeline and server
  */
 
+function envInt(name: string, fallback: number): number {
+    const v = process.env[name];
+    if (!v) return fallback;
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
+
 /** Maximum number of pages to scrape in a single job */
 export const DEFAULT_MAX_PAGES = 1000;
 
@@ -58,14 +65,14 @@ export const SPLITTER_MAX_CHUNK_SIZE = 5000;
 /**
  * Maximum number of documents to process in a single batch for embeddings.
  */
-export const EMBEDDING_BATCH_SIZE = 100;
+export const EMBEDDING_BATCH_SIZE = envInt("DOCS_MCP_EMBEDDING_BATCH_SIZE", 100);
 
 /**
  * Maximum total character size for a single embedding batch request.
  * This prevents "413 Request entity too large" errors from embedding APIs.
  * Default is 50000 (~50KB).
  */
-export const EMBEDDING_BATCH_CHARS = 50000;
+export const EMBEDDING_BATCH_CHARS = envInt("DOCS_MCP_EMBEDDING_BATCH_CHARS", 50000);
 
 /**
  * Maximum number of retries for database migrations if busy.
