@@ -55,45 +55,48 @@ export class ModelConfigurationError extends Error {
  * @returns true if credentials are available, false if no credentials found
  */
 export function areCredentialsAvailable(provider: EmbeddingProvider): boolean {
-  switch (provider) {
-    case "openai":
-      return !!process.env.OPENAI_API_KEY;
+    switch (provider) {
+        case "openai":
+            return !!process.env.OPENAI_API_KEY;
 
-    case "vertex":
-      return !!process.env.GOOGLE_APPLICATION_CREDENTIALS;
+        case "vertex":
+            return !!process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
-    case "gemini":
-      return !!process.env.GOOGLE_API_KEY;
+        case "gemini":
+            return !!process.env.GOOGLE_API_KEY;
 
-    case "aws": {
-      const region = process.env.BEDROCK_AWS_REGION || process.env.AWS_REGION;
-      return (
-        !!region &&
-        (!!process.env.AWS_PROFILE ||
-          (!!process.env.AWS_ACCESS_KEY_ID && !!process.env.AWS_SECRET_ACCESS_KEY))
-      );
+        case "aws": {
+            const region = process.env.BEDROCK_AWS_REGION || process.env.AWS_REGION;
+            return (
+                !!region &&
+                (!!process.env.AWS_PROFILE ||
+                    (!!process.env.AWS_ACCESS_KEY_ID && !!process.env.AWS_SECRET_ACCESS_KEY))
+            );
+        }
+
+        case "microsoft":
+            return !!(
+                process.env.AZURE_OPENAI_API_KEY &&
+                process.env.AZURE_OPENAI_API_INSTANCE_NAME &&
+                process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME &&
+                process.env.AZURE_OPENAI_API_VERSION
+            );
+
+        case "sagemaker": {
+            const region = process.env.AWS_REGION;
+            return (
+                !!region &&
+                (!!process.env.AWS_PROFILE ||
+                    (!!process.env.AWS_ACCESS_KEY_ID && !!process.env.AWS_SECRET_ACCESS_KEY))
+            );
+        }
+
+        case "runpod":
+            return !!(process.env.RUNPOD_API_KEY && process.env.RUNPOD_ENDPOINT_ID);
+
+        default:
+            return false;
     }
-
-    case "microsoft":
-      return !!(
-        process.env.AZURE_OPENAI_API_KEY &&
-        process.env.AZURE_OPENAI_API_INSTANCE_NAME &&
-        process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME &&
-        process.env.AZURE_OPENAI_API_VERSION
-      );
-
-    case "sagemaker": {
-      const region = process.env.AWS_REGION;
-      return (
-        !!region &&
-        (!!process.env.AWS_PROFILE ||
-          (!!process.env.AWS_ACCESS_KEY_ID && !!process.env.AWS_SECRET_ACCESS_KEY))
-      );
-    }
-
-    default:
-      return false;
-  }
 }
 
 /**
@@ -108,6 +111,7 @@ export function areCredentialsAvailable(provider: EmbeddingProvider): boolean {
  * - Google GenAI (Gemini): GOOGLE_API_KEY
  * - AWS: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION (or BEDROCK_AWS_REGION)
  * - Microsoft: AZURE_OPENAI_API_KEY, AZURE_OPENAI_API_INSTANCE_NAME, AZURE_OPENAI_API_DEPLOYMENT_NAME, AZURE_OPENAI_API_VERSION
+ * - RunPod: RUNPOD_API_KEY, RUNPOD_ENDPOINT_ID (and optionally RUNPOD_API_URL, RUNPOD_EMBED_DIM, RUNPOD_TIMEOUT_MS)
  *
  * @param providerAndModel - The provider and model name in the format "provider:model_name"
  *                          or just "model_name" for OpenAI models.
