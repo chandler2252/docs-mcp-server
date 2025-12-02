@@ -11,25 +11,26 @@
  * Supported embedding model providers.
  */
 export type EmbeddingProvider =
-  | "openai"
-  | "vertex"
-  | "gemini"
-  | "aws"
-  | "microsoft"
-  | "sagemaker";
+    | "openai"
+    | "vertex"
+    | "gemini"
+    | "aws"
+    | "microsoft"
+    | "sagemaker"
+    | "runpod";
 
 /**
  * Embedding model configuration parsed from environment variables.
  */
 export interface EmbeddingModelConfig {
-  /** The provider (e.g., "openai", "gemini") */
-  provider: EmbeddingProvider;
-  /** The model name (e.g., "text-embedding-3-small") */
-  model: string;
-  /** Known dimensions for this model, or null if unknown */
-  dimensions: number | null;
-  /** The full model specification string (e.g., "openai:text-embedding-3-small") */
-  modelSpec: string;
+    /** The provider (e.g., "openai", "gemini") */
+    provider: EmbeddingProvider;
+    /** The model name (e.g., "text-embedding-3-small") */
+    model: string;
+    /** Known dimensions for this model, or null if unknown */
+    dimensions: number | null;
+    /** The full model specification string (e.g., "openai:text-embedding-3-small") */
+    modelSpec: string;
 }
 
 /**
