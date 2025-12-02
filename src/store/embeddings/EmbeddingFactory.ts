@@ -3,49 +3,47 @@ import type { Embeddings } from "@langchain/core/embeddings";
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { VertexAIEmbeddings } from "@langchain/google-vertexai";
 import {
-  AzureOpenAIEmbeddings,
-  type ClientOptions,
-  OpenAIEmbeddings,
-  type OpenAIEmbeddingsParams,
+    AzureOpenAIEmbeddings,
+    type ClientOptions,
+    OpenAIEmbeddings,
+    type OpenAIEmbeddingsParams,
 } from "@langchain/openai";
 import { MissingCredentialsError } from "../errors";
 import { VECTOR_DIMENSION } from "../types";
 import { FixedDimensionEmbeddings } from "./FixedDimensionEmbeddings";
+import { RunpodQueueEmbeddings } from "./RunpodQueueEmbeddings";
+import { EmbeddingConfig, type EmbeddingProvider as ConfigEmbeddingProvider } from "./EmbeddingConfig";
 
 /**
  * Supported embedding model providers. Each provider requires specific environment
  * variables to be set for API access.
+ *
+ * Kept in sync with EmbeddingConfig.EmbeddingProvider.
  */
-export type EmbeddingProvider =
-  | "openai"
-  | "vertex"
-  | "gemini"
-  | "aws"
-  | "microsoft"
-  | "sagemaker";
+export type EmbeddingProvider = ConfigEmbeddingProvider;
 
 /**
  * Error thrown when an invalid or unsupported embedding provider is specified.
  */
 export class UnsupportedProviderError extends Error {
-  constructor(provider: string) {
-    super(
-      `❌ Unsupported embedding provider: ${provider}\n` +
-        "   Supported providers: openai, vertex, gemini, aws, microsoft, sagemaker\n" +
-        "   See README.md for configuration options or run with --help for more details.",
-    );
-    this.name = "UnsupportedProviderError";
-  }
+    constructor(provider: string) {
+        super(
+            `❌ Unsupported embedding provider: ${provider}\n` +
+            "   Supported providers: openai, vertex, gemini, aws, microsoft, sagemaker, runpod\n" +
+            "   See README.md for configuration options or run with --help for more details.",
+        );
+        this.name = "UnsupportedProviderError";
+    }
 }
 
 /**
  * Error thrown when there's an issue with the model configuration or missing environment variables.
  */
 export class ModelConfigurationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "ModelConfigurationError";
-  }
+    constructor(message: string) {
+        super(message);
+        this.name = "ModelConfigurationError";
+    }
 }
 
 /**
