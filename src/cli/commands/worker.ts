@@ -20,6 +20,14 @@ import {
     validatePort,
 } from "../utils";
 
+function parsePositiveInt(name: string, v: string, min = 1, max = 1024): number {
+    const n = Number(v);
+    if (!Number.isInteger(n) || n < min || n > max) {
+        throw new Error(`${name} must be an integer between ${min} and ${max}`);
+    }
+    return n;
+}
+
 export function createWorkerCommand(program: Command): Command {
     return program
         .command("worker")
@@ -46,24 +54,18 @@ export function createWorkerCommand(program: Command): Command {
         )
         .addOption(
             new Option(
-                "--embedding-model <model>",
-                "Embedding model configuration (e.g., 'openai:text-embedding-3-small')",
-            ).env("DOCS_MCP_EMBEDDING_MODEL"),
-        )
-        .addOption(
-            new Option(
                 "--concurrency <number>",
-                "Max concurrent pipeline work per worker process",
+                "Max concurrent pipeline work items per worker process",
             )
                 .env("DOCS_MCP_WORKER_CONCURRENCY")
                 .default(String(DEFAULT_MAX_CONCURRENCY))
-                .argParser((v: string) => {
-                    const n = Number(v);
-                    if (!Number.isInteger(n) || n < 1 || n > 128) {
-                        throw new Error("Concurrency must be an integer between 1 and 128");
-                    }
-                    return String(n);
-                }),
+                .argParser((v: string) => String(parsePositiveInt("concurrency", v, 1, 4096))),
+        )
+        .addOption(
+            new Option(
+                "--embedding-model <model>",
+                "Embedding model configuration (e.g., 'openai:text-embedding-3-small')",
+            ).env("DOCS_MCP_EMBEDDING_MODEL"),
         )
         .option("--resume", "Resume interrupted jobs on startup", true)
         .option("--no-resume", "Do not resume jobs on startup")
@@ -72,35 +74,29 @@ export function createWorkerCommand(program: Command): Command {
                 cmdOptions: {
                     port: string;
                     host: string;
+                    concurrency: string;
                     embeddingModel?: string;
                     resume: boolean;
-                    concurrency: string;
                 },
                 command?: Command,
             ) => {
-                await telemetry.track(TelemetryEvent.CLI_COMMAND, {
-                    command: "worker",
-                    port: cmdOptions.port,
-                    host: cmdOptions.host,
-                    resume: cmdOptions.resume,
-                    concurrency: cmdOptions.concurrency,
-                });
-
                 const port = validatePort(cmdOptions.port);
                 const host = validateHost(cmdOptions.host);
-                const concurrency = Number(cmdOptions.concurrency);
+                const concurrency = parsePositiveInt("concurrency", cmdOptions.concurrency, 1, 4096);
+
+                await telemetry.track(TelemetryEvent.CLI_COMMAND, {
+                    command: "worker",
+                    port: String(port),
+                    host,
+                    concurrency,
+                    resume: cmdOptions.resume,
+                });
 
                 try {
-                    // Ensure browsers are installed for scraping
                     ensurePlaywrightBrowsersInstalled();
-
-                    // Resolve embedding configuration for worker (worker needs embeddings for indexing)
                     const embeddingConfig = resolveEmbeddingContext(cmdOptions.embeddingModel);
 
-                    // Get global options from root command (which has resolved storePath in preAction hook)
                     const globalOptions = program.opts();
-
-                    // Get the global EventBusService
                     const eventBus = getEventBus(command);
 
                     const docService = await createLocalDocumentManagement(
@@ -114,13 +110,16 @@ export function createWorkerCommand(program: Command): Command {
                         concurrency,
                     };
 
+                    logger.info(
+                        `🧵 Worker pipeline concurrency = ${concurrency} (resume=${cmdOptions.resume})`,
+                    );
+
                     const pipeline = await PipelineFactory.createPipeline(
                         docService,
                         eventBus,
                         pipelineOptions,
                     );
 
-                    // Configure worker-only server
                     const config = createAppServerConfig({
                         enableWebInterface: false,
                         enableMcpServer: false,
@@ -135,15 +134,12 @@ export function createWorkerCommand(program: Command): Command {
 
                     const appServer = await startAppServer(docService, pipeline, eventBus, config);
 
-                    // Register for graceful shutdown
-                    // Note: pipeline is managed by AppServer, so don't register it globally
                     registerGlobalServices({
                         appServer,
                         docService,
-                        // pipeline is owned by AppServer - don't register globally to avoid double shutdown
                     });
 
-                    await new Promise(() => { }); // Keep running forever
+                    await new Promise(() => { });
                 } catch (error) {
                     logger.error(`❌ Failed to start external pipeline worker: ${error}`);
                     process.exit(1);
