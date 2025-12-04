@@ -3,10 +3,10 @@
  */
 
 function envInt(name: string, fallback: number): number {
-    const v = process.env[name];
-    if (!v) return fallback;
-    const n = Number(v);
-    return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+  const v = process.env[name];
+  if (!v) return fallback;
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
 }
 
 /** Maximum number of pages to scrape in a single job */
@@ -16,7 +16,10 @@ export const DEFAULT_MAX_PAGES = 1000;
 export const DEFAULT_MAX_DEPTH = 3;
 
 /** Maximum number of concurrent page requests */
-export const DEFAULT_MAX_CONCURRENCY = 3;
+export const DEFAULT_MAX_CONCURRENCY = envInt("DOCS_MCP_SCRAPER_MAX_CONCURRENCY", 3);
+
+/** Maximum number of concurrent pipeline jobs per worker process */
+export const DEFAULT_PIPELINE_CONCURRENCY = envInt("DOCS_MCP_WORKER_CONCURRENCY", 3);
 
 /** Default protocol for the MCP server */
 export const DEFAULT_PROTOCOL = "auto";

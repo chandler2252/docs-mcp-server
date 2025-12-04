@@ -337,10 +337,14 @@ Many CLI arguments can be overridden using environment variables. This is useful
 | `PORT`                     | `--port`               | Server port (fallback if DOCS_MCP_PORT not set) | default, mcp, web, worker |
 | `DOCS_MCP_HOST`            | `--host`               | Server host/bind address                        | default, mcp, web, worker |
 | `HOST`                     | `--host`               | Server host (fallback if DOCS_MCP_HOST not set) | default, mcp, web, worker |
+| `DOCS_MCP_SCRAPER_MAX_CONCURRENCY` | `--max-concurrency`      | Default concurrent page fetches per scrape job   | scrape   |
+| `DOCS_MCP_WORKER_CONCURRENCY` | `--concurrency`         | Maximum pipeline jobs executed by a worker process | worker   |
 | `DOCS_MCP_EMBEDDING_MODEL` | `--embedding-model`    | Embedding model configuration                   | default, mcp, web, worker |
 | `DOCS_MCP_AUTH_ENABLED`    | `--auth-enabled`       | Enable OAuth2/OIDC authentication               | default, mcp              |
 | `DOCS_MCP_AUTH_ISSUER_URL` | `--auth-issuer-url`    | OAuth2 provider issuer/discovery URL            | default, mcp              |
 | `DOCS_MCP_AUTH_AUDIENCE`   | `--auth-audience`      | JWT audience claim (resource identifier)        | default, mcp              |
+
+`DOCS_MCP_SCRAPER_MAX_CONCURRENCY` controls vertical scaling within a single scrape job (parallel page fetches and processing), while `DOCS_MCP_WORKER_CONCURRENCY` controls horizontal job fan-out in worker mode.
 
 **Usage Examples:**
 
