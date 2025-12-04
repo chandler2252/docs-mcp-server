@@ -1,6 +1,6 @@
 import type { EventBusService } from "../events/EventBusService";
 import type { DocumentManagementService } from "../store";
-import { DEFAULT_MAX_CONCURRENCY } from "../utils/config";
+import { DEFAULT_PIPELINE_CONCURRENCY } from "../utils/config";
 import { logger } from "../utils/logger";
 import { PipelineClient } from "./PipelineClient";
 import { PipelineManager } from "./PipelineManager";
@@ -38,7 +38,7 @@ export namespace PipelineFactory {
     const {
       recoverJobs = false, // Default to false for safety
       serverUrl,
-      concurrency = DEFAULT_MAX_CONCURRENCY,
+      concurrency = DEFAULT_PIPELINE_CONCURRENCY,
     } = options;
 
     logger.debug(

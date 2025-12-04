@@ -1,7 +1,13 @@
+/**
+ * BaseScraperStrategy implements shared crawling logic for concrete strategies.
+ * It manages URL deduplication, batching, and cancellation-aware queue handling
+ * while delegating page processing to pipeline-specific implementations.
+ */
+
 import { URL } from "node:url";
 import { CancellationError } from "../../pipeline/errors";
 import type { ProgressCallback } from "../../types";
-import { DEFAULT_MAX_PAGES } from "../../utils/config";
+import { DEFAULT_MAX_CONCURRENCY, DEFAULT_MAX_PAGES } from "../../utils/config";
 import { logger } from "../../utils/logger";
 import { normalizeUrl, type UrlNormalizerOptions } from "../../utils/url";
 import { FetchStatus } from "../fetcher/types";
@@ -18,7 +24,6 @@ import { isInScope } from "../utils/scope";
 
 // Define defaults for optional options
 const DEFAULT_MAX_DEPTH = 3;
-const DEFAULT_CONCURRENCY = 3;
 
 export interface BaseScraperStrategyOptions {
   urlNormalizerOptions?: UrlNormalizerOptions;
@@ -326,7 +331,7 @@ export abstract class BaseScraperStrategy implements ScraperStrategy {
 
     // Resolve optional values to defaults using temporary variables
     const maxPages = options.maxPages ?? DEFAULT_MAX_PAGES;
-    const maxConcurrency = options.maxConcurrency ?? DEFAULT_CONCURRENCY;
+    const maxConcurrency = options.maxConcurrency ?? DEFAULT_MAX_CONCURRENCY;
 
     // Unified processing loop for both normal and refresh modes
     while (queue.length > 0 && this.pageCount < maxPages) {

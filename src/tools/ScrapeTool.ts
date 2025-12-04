@@ -1,3 +1,8 @@
+/**
+ * ScrapeTool enqueues documentation scraping jobs through the pipeline interface
+ * and optionally waits for completion to report final progress to callers.
+ */
+
 import * as semver from "semver";
 import type { IPipeline } from "../pipeline/trpc/interfaces";
 import { ScrapeMode } from "../scraper/types";

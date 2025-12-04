@@ -14,7 +14,7 @@ import { ScraperRegistry, ScraperService } from "../scraper";
 import type { ScraperOptions, ScraperProgressEvent } from "../scraper/types";
 import type { DocumentManagementService } from "../store";
 import { VersionStatus } from "../store/types";
-import { DEFAULT_MAX_CONCURRENCY } from "../utils/config";
+import { DEFAULT_PIPELINE_CONCURRENCY } from "../utils/config";
 import { logger } from "../utils/logger";
 import { CancellationError, PipelineStateError } from "./errors";
 import { PipelineWorker } from "./PipelineWorker"; // Import the worker
@@ -39,7 +39,7 @@ export class PipelineManager implements IPipeline {
   constructor(
     store: DocumentManagementService,
     eventBus: EventBusService,
-    concurrency: number = DEFAULT_MAX_CONCURRENCY,
+    concurrency: number = DEFAULT_PIPELINE_CONCURRENCY,
     options: { recoverJobs?: boolean } = {},
   ) {
     this.store = store;
